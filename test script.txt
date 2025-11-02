@@ -1,202 +1,370 @@
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local camera = workspace.CurrentCamera
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
-local teleportDistance = 5
-local spinning = false
-local directions = {
-	{angle = 0}, {angle = 45}, {angle = 90}, {angle = 135},
-	{angle = 180}, {angle = -135}, {angle = -90}, {angle = -45}
-}
 
-local function teleportAndLook(angle)
-	local cf = hrp.CFrame
-	local move = (cf * CFrame.Angles(0, math.rad(angle), 0)).LookVector * teleportDistance
-	hrp.CFrame = CFrame.new(cf.Position + move) * CFrame.Angles(0, math.rad(angle), 0)
+local gui = Instance.new("ScreenGui")
+gui.Name = "StartSceneGUI"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local function scaleElement(element, scaleX, scaleY, posX, posY)
+	element.Size = UDim2.new(scaleX, 0, scaleY, 0)
+	element.Position = UDim2.new(posX, 0, posY, 0)
+	element.AnchorPoint = Vector2.new(0.5, 0.5)
 end
 
-local function startSpin()
-	if spinning then return end
-	spinning = true
-	task.spawn(function()
-		while spinning do
-			for _, d in ipairs(directions) do
-				if not spinning then break end
-				teleportAndLook(d.angle)
-				task.wait(0.1)
-			end
+
+local bg = Instance.new("Frame")
+scaleElement(bg, 1.5, 1.5, 0.5, 0.5)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BorderSizePixel = 0
+bg.Parent = gui
+
+
+local scanlines = Instance.new("Frame")
+scaleElement(scanlines, 1, 1, 0.5, 0.5)
+scanlines.BackgroundTransparency = 0.9
+scanlines.BackgroundColor3 = Color3.new(0, 0, 0)
+scanlines.BorderSizePixel = 0
+scanlines.Parent = gui
+
+
+local static = Instance.new("Frame")
+scaleElement(static, 1, 1, 0.5, 0.5)
+static.BackgroundColor3 = Color3.new(1, 1, 1)
+static.BackgroundTransparency = 0.95
+static.BorderSizePixel = 0
+static.Parent = gui
+
+
+local sparks = Instance.new("Folder")
+sparks.Name = "Sparks"
+sparks.Parent = gui
+
+
+local title = Instance.new("TextLabel")
+title.Text = "MADE BY 67_GODS" 
+title.Font = Enum.Font.Arcade
+title.TextSize = 72
+title.TextColor3 = Color3.fromRGB(0, 255, 255)
+title.BackgroundTransparency = 1
+title.Parent = gui
+scaleElement(title, 0.8, 0.15, 0.5, 0.25)
+
+
+local loadBg = Instance.new("Frame")
+loadBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+loadBg.BorderSizePixel = 0
+loadBg.Parent = gui
+scaleElement(loadBg, 0.6, 0.03, 0.5, 0.55)
+
+local loadFill = Instance.new("Frame")
+loadFill.Size = UDim2.new(0, 0, 1, 0)
+loadFill.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+loadFill.BorderSizePixel = 0
+loadFill.Parent = loadBg
+
+
+local playBtn = Instance.new("TextButton")
+playBtn.Text = "PLAY"
+playBtn.Font = Enum.Font.Arcade
+playBtn.TextSize = 40
+playBtn.TextColor3 = Color3.fromRGB(255, 0, 255)
+playBtn.BackgroundColor3 = Color3.new(0, 0, 0)
+playBtn.BorderColor3 = Color3.fromRGB(255, 0, 255)
+playBtn.BorderSizePixel = 2
+playBtn.TextTransparency = 0.5
+playBtn.BackgroundTransparency = 0.5
+playBtn.AutoButtonColor = false
+playBtn.Active = false
+playBtn.Parent = gui
+scaleElement(playBtn, 0.25, 0.08, 0.5, 0.65)
+
+
+local headshot = Instance.new("ImageLabel")
+headshot.Size = UDim2.new(0.15, 0, 0.15, 0)
+headshot.AnchorPoint = Vector2.new(0.5, 0.5)
+headshot.BackgroundTransparency = 1
+headshot.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=9786802860&width=420&height=420&format=png"
+headshot.Parent = gui
+headshot.Position = UDim2.new(0.5, 0, 0.5, 0)
+headshot.Visible = false
+
+
+local glitching = true
+local originalCFrame = camera.CFrame
+
+local function glitchCamera()
+	while glitching do
+		local offset = Vector3.new(math.random(-10, 10) / 10, math.random(-10, 10) / 10, math.random(-10, 10) / 10)
+		local rot = CFrame.Angles(math.rad(math.random(-8, 8)), math.rad(math.random(-8, 8)), math.rad(math.random(-8, 8)))
+		camera.CFrame = originalCFrame * CFrame.new(offset) * rot
+		RunService.RenderStepped:Wait()
+	end
+end
+
+local function flickerTitle()
+	while glitching do
+		title.TextColor3 = Color3.fromRGB(math.random(0, 255), math.random(0, 255), math.random(0, 255))
+		title.Rotation = math.random(-10, 10)
+		wait(0.08)
+	end
+end
+
+local function flickerScanlines()
+	while glitching do
+		scanlines.BackgroundTransparency = 0.85 + math.random() * 0.1
+		wait(0.05)
+	end
+end
+
+local function flickerStatic()
+	while glitching do
+		static.BackgroundTransparency = 0.9 + math.random() * 0.05
+		wait(0.03)
+	end
+end
+
+local function spawnSpark()
+	local spark = Instance.new("Frame")
+	spark.Size = UDim2.new(0, math.random(2, 6), 0, math.random(2, 6))
+	spark.Position = UDim2.new(math.random(), 0, math.random(), 0)
+	spark.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+	spark.BorderSizePixel = 0
+	spark.AnchorPoint = Vector2.new(0.5, 0.5)
+	spark.Parent = sparks
+	TweenService:Create(spark, TweenInfo.new(0.2), {Position = UDim2.new(math.random(), 0, math.random(), 0), BackgroundTransparency = 1}):Play()
+	Debris:AddItem(spark, 0.25)
+end
+
+local function sparkLoop()
+	while glitching do
+		if math.random() < 0.3 then
+			spawnSpark()
 		end
+		wait(0.05)
+	end
+end
+
+local function headshotSwarm()
+	while glitching do
+		local count = math.random(1, 3)
+		for i = 1, count do
+			local hs = headshot:Clone()
+			hs.Parent = gui
+			hs.Position = UDim2.new(math.random(2, 8) / 10, 0, math.random(2, 8) / 10, 0)
+			hs.Visible = true
+			spawn(function()
+				local duration = math.random(3, 6)
+				local startTime = tick()
+				while tick() - startTime < duration and hs.Parent do
+					hs.Position = UDim2.new(math.random(2, 8) / 10, 0, math.random(2, 8) / 10, 0)
+					wait(0.2)
+				end
+				hs:Destroy()
+			end)
+		end
+		wait(math.random(0.3, 1))
+	end
+end
+
+
+spawn(glitchCamera)
+spawn(flickerTitle)
+spawn(flickerScanlines)
+spawn(flickerStatic)
+spawn(sparkLoop)
+spawn(headshotSwarm)
+
+
+local loadPercent = 0
+spawn(function()
+	while loadPercent < 100 do
+		loadPercent += 1
+		loadFill.Size = UDim2.new(loadPercent / 100, 0, 1, 0)
+		wait(0.05)
+	end
+	playBtn.Active = true
+	playBtn.TextTransparency = 0
+	playBtn.BackgroundTransparency = 0
+end)
+
+
+
+local function onPlay()
+	if not playBtn.Active then return end
+	glitching = false
+
+	local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(camera, tweenInfo, {CFrame = originalCFrame}):Play()
+	TweenService:Create(bg, tweenInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(title, tweenInfo, {TextTransparency = 1}):Play()
+	TweenService:Create(playBtn, tweenInfo, {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+	TweenService:Create(scanlines, tweenInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(static, tweenInfo, {BackgroundTransparency = 1}):Play()
+	TweenService:Create(loadBg, tweenInfo, {BackgroundTransparency = 1}):Play()
+
+	wait(1)
+	gui:Destroy()
+
+	
+	task.wait(0.5)
+
+
+
+	local teleportDistance = 5
+	local spinning = false
+	local directions = {{angle=0},{angle=45},{angle=90},{angle=135},{angle=180},{angle=-135},{angle=-90},{angle=-45}}
+
+	local function teleportAndLook(angle)
+		local cf = hrp.CFrame
+		local move = (cf * CFrame.Angles(0, math.rad(angle), 0)).LookVector * teleportDistance
+		hrp.CFrame = CFrame.new(cf.Position + move) * CFrame.Angles(0, math.rad(angle), 0)
+	end
+
+	local function startSpin()
+		if spinning then return end
+		spinning = true
+		task.spawn(function()
+			while spinning do
+				for _,d in ipairs(directions) do
+					if not spinning then break end
+					teleportAndLook(d.angle)
+					task.wait(0.1)
+				end
+			end
+		end)
+	end
+
+	local function stopSpin() spinning = false end
+
+	UserInputService.InputBegan:Connect(function(i, p)
+		if p then return end
+		if i.KeyCode == Enum.KeyCode.Y then startSpin()
+		elseif i.KeyCode == Enum.KeyCode.F then stopSpin() end
+	end)
+
+	local teleportDistance2, canTeleport, cooldown = 7, true, 0.2
+	local function teleport(key)
+		if not canTeleport then return end
+		local pos = hrp.Position
+		if key == "W" then pos += hrp.CFrame.LookVector * teleportDistance2
+		elseif key == "S" then pos -= hrp.CFrame.LookVector * teleportDistance2
+		elseif key == "A" then pos -= hrp.CFrame.RightVector * teleportDistance2
+		elseif key == "D" then pos += hrp.CFrame.RightVector * teleportDistance2 end
+		hrp.CFrame = CFrame.new(pos, pos + hrp.CFrame.LookVector)
+		canTeleport = false
+		task.delay(cooldown, function() canTeleport = true end)
+	end
+
+	UserInputService.InputBegan:Connect(function(i, p)
+		if p then return end
+		local k = i.KeyCode
+		if k == Enum.KeyCode.W then teleport("W")
+		elseif k == Enum.KeyCode.S then teleport("S")
+		elseif k == Enum.KeyCode.A then teleport("A")
+		elseif k == Enum.KeyCode.D then teleport("D") end
+	end)
+
+	local teleportDistance3, running, forward = 7, false, true
+	local function flashTeleport()
+		while running do
+			local offset = forward and teleportDistance3 or -teleportDistance3
+			local target = hrp.Position + hrp.CFrame.LookVector * offset
+			hrp.CFrame = CFrame.new(target, target + hrp.CFrame.LookVector)
+			forward = not forward
+			task.wait(0.02)
+		end
+	end
+
+	UserInputService.InputBegan:Connect(function(i, p)
+		if p then return end
+		if i.KeyCode == Enum.KeyCode.T and not running then
+			running = true
+			task.spawn(flashTeleport)
+		elseif i.KeyCode == Enum.KeyCode.F and running then
+			running = false
+		end
+	end)
+
+	local gui2 = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+	gui2.ResetOnSpawn = false
+
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0, 360, 0, 110)
+	frame.Position = UDim2.new(1, -300, 1, -160)
+	frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	frame.BackgroundTransparency = 1
+	frame.BorderSizePixel = 0
+	frame.Parent = gui2
+
+	local corner = Instance.new("UICorner", frame)
+	corner.CornerRadius = UDim.new(0, 10)
+
+	local gradient = Instance.new("UIGradient", frame)
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+	})
+	gradient.Rotation = 90
+
+	local accent = Instance.new("Frame", frame)
+	accent.Size = UDim2.new(0, 6, 1, 0)
+	accent.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+	accent.BackgroundTransparency = 0.1
+	accent.BorderSizePixel = 0
+
+	local accentGlow = Instance.new("UIGradient", accent)
+	accentGlow.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 200, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
+	})
+	accentGlow.Rotation = 90
+
+	local title2 = Instance.new("TextLabel", frame)
+	title2.Size = UDim2.new(1, -20, 0, 25)
+	title2.Position = UDim2.new(0, 15, 0, 8)
+	title2.BackgroundTransparency = 1
+	title2.Font = Enum.Font.SourceSansBold
+	title2.Text = "FE Teleport Script Attached!"
+	title2.TextSize = 20
+	title2.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title2.TextTransparency = 1
+	title2.TextXAlignment = Enum.TextXAlignment.Left
+
+	local msg = Instance.new("TextLabel", frame)
+	msg.Size = UDim2.new(1, -20, 1, -40)
+	msg.Position = UDim2.new(0, 15, 0, 35)
+	msg.BackgroundTransparency = 1
+	msg.Font = Enum.Font.SourceSans
+	msg.TextSize = 16
+	msg.TextWrapped = true
+	msg.TextColor3 = Color3.fromRGB(210, 210, 210)
+	msg.TextTransparency = 1
+	msg.Text = "Press 'T' to start flash teleporting\nPress 'Y' to start spinning\nTo stop, press 'F'."
+
+	-- Notification Animation
+	local startPos = frame.Position + UDim2.new(0, 200, 0, 0)
+	frame.Position = startPos
+	TweenService:Create(frame, TweenInfo.new(0.6), {Position = UDim2.new(1, -380, 1, -160), BackgroundTransparency = 0.1}):Play()
+	TweenService:Create(title2, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
+	TweenService:Create(msg, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
+
+	task.delay(6, function()
+		TweenService:Create(title2, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+		TweenService:Create(msg, TweenInfo.new(0.6), {TextTransparency = 1}):Play()
+		task.wait(1)
+		gui2:Destroy()
 	end)
 end
 
-local function stopSpin()
-	spinning = false
-end
-
-UserInputService.InputBegan:Connect(function(i, p)
-	if p then return end
-	if i.KeyCode == Enum.KeyCode.Y then
-		startSpin()
-	elseif i.KeyCode == Enum.KeyCode.F then
-		stopSpin()
-	end
-end)
-
-local teleportDistance2, canTeleport, cooldown = 7, true, 0.2
-local function teleport(key)
-	if not canTeleport then return end
-	local pos = hrp.Position
-	if key == "W" then
-		pos += hrp.CFrame.LookVector * teleportDistance2
-	elseif key == "S" then
-		pos -= hrp.CFrame.LookVector * teleportDistance2
-	elseif key == "A" then
-		pos -= hrp.CFrame.RightVector * teleportDistance2
-	elseif key == "D" then
-		pos += hrp.CFrame.RightVector * teleportDistance2
-	end
-	hrp.CFrame = CFrame.new(pos, pos + hrp.CFrame.LookVector)
-	canTeleport = false
-	task.delay(cooldown, function() canTeleport = true end)
-end
-
-UserInputService.InputBegan:Connect(function(i, p)
-	if p then return end
-	local k = i.KeyCode
-	if k == Enum.KeyCode.W then teleport("W")
-	elseif k == Enum.KeyCode.S then teleport("S")
-	elseif k == Enum.KeyCode.A then teleport("A")
-	elseif k == Enum.KeyCode.D then teleport("D") end
-end)
-
-local teleportDistance3, running, forward = 7, false, true
-local function flashTeleport()
-	while running do
-		local offset = forward and teleportDistance3 or -teleportDistance3
-		local target = hrp.Position + hrp.CFrame.LookVector * offset
-		hrp.CFrame = CFrame.new(target, target + hrp.CFrame.LookVector)
-		forward = not forward
-		task.wait(0.02)
-	end
-end
-
-UserInputService.InputBegan:Connect(function(i, p)
-	if p then return end
-	if i.KeyCode == Enum.KeyCode.T and not running then
-		running = true
-		task.spawn(flashTeleport)
-	elseif i.KeyCode == Enum.KeyCode.F and running then
-		running = false
-	end
-end)
-
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.ResetOnSpawn = false
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 360, 0, 110)
-frame.Position = UDim2.new(1, -300, 1, -160)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BackgroundTransparency = 1
-frame.BorderSizePixel = 0
-frame.Parent = gui
-
-local corner = Instance.new("UICorner", frame)
-corner.CornerRadius = UDim.new(0, 10)
-
-local gradient = Instance.new("UIGradient", frame)
-gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
-})
-gradient.Rotation = 90
-
-local accent = Instance.new("Frame", frame)
-accent.Size = UDim2.new(0, 6, 1, 0)
-accent.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-accent.BackgroundTransparency = 0.1
-accent.BorderSizePixel = 0
-
-local accentGlow = Instance.new("UIGradient", accent)
-accentGlow.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 200, 255)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 150, 255))
-})
-accentGlow.Rotation = 90
-
-local shadow = Instance.new("ImageLabel", frame)
-shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-shadow.Size = UDim2.new(1, 30, 1, 30)
-shadow.BackgroundTransparency = 1
-shadow.Image = "rbxassetid://5028857084"
-shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-shadow.ImageTransparency = 0.5
-shadow.ScaleType = Enum.ScaleType.Slice
-shadow.SliceCenter = Rect.new(24, 24, 276, 276)
-
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, -20, 0, 25)
-title.Position = UDim2.new(0, 15, 0, 8)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.SourceSansBold
-title.Text = "FE Teleport Script Attached!"
-title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextTransparency = 1
-title.TextXAlignment = Enum.TextXAlignment.Left
-
-local msg = Instance.new("TextLabel", frame)
-msg.Size = UDim2.new(1, -20, 1, -40)
-msg.Position = UDim2.new(0, 15, 0, 35)
-msg.BackgroundTransparency = 1
-msg.Font = Enum.Font.SourceSans
-msg.TextSize = 16
-msg.TextWrapped = true
-msg.TextColor3 = Color3.fromRGB(210, 210, 210)
-msg.TextTransparency = 1
-msg.TextXAlignment = Enum.TextXAlignment.Left
-msg.TextYAlignment = Enum.TextYAlignment.Top
-msg.Text = "Press 'T' to start flash teleporting\nPress 'Y' to start spinning\nTo stop the flash/spin, press 'F'."
-
-local closeLabel = Instance.new("TextLabel", frame)
-closeLabel.Size = UDim2.new(1, 0, 1, 0)
-closeLabel.BackgroundTransparency = 1
-closeLabel.Font = Enum.Font.SourceSansBold
-closeLabel.TextSize = 18
-closeLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-closeLabel.TextTransparency = 1
-closeLabel.Text = "Made by the 67_gods"
-closeLabel.Visible = false
-
-
-local startPos = frame.Position + UDim2.new(0, 200, 0, 0)
-frame.Position = startPos
-TweenService:Create(frame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-	Position = UDim2.new(1, -380, 1, -160),
-	BackgroundTransparency = 0.1
-}):Play()
-TweenService:Create(title, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-TweenService:Create(msg, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-
-
-task.delay(5, function()
-	local fade = 0.6
-	TweenService:Create(title, TweenInfo.new(fade), {TextTransparency = 1}):Play()
-	TweenService:Create(msg, TweenInfo.new(fade), {TextTransparency = 1}):Play()
-	task.wait(fade)
-	closeLabel.Visible = true
-	TweenService:Create(closeLabel, TweenInfo.new(0.6), {TextTransparency = 0}):Play()
-	task.wait(1.2)
-	TweenService:Create(frame, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		BackgroundTransparency = 1,
-		Position = frame.Position - UDim2.new(0, 0, 0, 40)
-	}):Play()
-	TweenService:Create(closeLabel, TweenInfo.new(0.7), {TextTransparency = 1}):Play()
-	task.wait(1)
-	gui:Destroy()
-end)
+playBtn.MouseButton1Click:Connect(onPlay)
