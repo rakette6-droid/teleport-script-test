@@ -100,8 +100,8 @@ local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 340, 0, 100)
-frame.Position = UDim2.new(1, -360, 1, -140)
+frame.Size = UDim2.new(0, 360, 0, 120) -- increased width and height
+frame.Position = UDim2.new(1, -380, 1, -160)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BackgroundTransparency = 1
 frame.BorderSizePixel = 0
