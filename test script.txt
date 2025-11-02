@@ -9,7 +9,11 @@ local hrp = character:WaitForChild("HumanoidRootPart")
 
 local teleportDistance = 5
 local spinning = false
-local directions = {{angle = 0},{angle = 45},{angle = 90},{angle = 135},{angle = 180},{angle = -135},{angle = -90},{angle = -45}}
+
+local directions = {
+	{angle = 0}, {angle = 45}, {angle = 90}, {angle = 135},
+	{angle = 180}, {angle = -135}, {angle = -90}, {angle = -45}
+}
 
 local function teleportAndLook(angle)
 	local cf = hrp.CFrame
@@ -37,18 +41,26 @@ end
 
 UserInputService.InputBegan:Connect(function(i, p)
 	if p then return end
-	if i.KeyCode == Enum.KeyCode.Y then startSpin()
-	elseif i.KeyCode == Enum.KeyCode.F then stopSpin() end
+	if i.KeyCode == Enum.KeyCode.Y then
+		startSpin()
+	elseif i.KeyCode == Enum.KeyCode.F then
+		stopSpin()
+	end
 end)
 
 local teleportDistance2, canTeleport, cooldown = 7, true, 0.2
 local function teleport(key)
 	if not canTeleport then return end
 	local pos = hrp.Position
-	if key == "W" then pos += hrp.CFrame.LookVector * teleportDistance2
-	elseif key == "S" then pos -= hrp.CFrame.LookVector * teleportDistance2
-	elseif key == "A" then pos -= hrp.CFrame.RightVector * teleportDistance2
-	elseif key == "D" then pos += hrp.CFrame.RightVector * teleportDistance2 end
+	if key == "W" then
+		pos += hrp.CFrame.LookVector * teleportDistance2
+	elseif key == "S" then
+		pos -= hrp.CFrame.LookVector * teleportDistance2
+	elseif key == "A" then
+		pos -= hrp.CFrame.RightVector * teleportDistance2
+	elseif key == "D" then
+		pos += hrp.CFrame.RightVector * teleportDistance2
+	end
 	hrp.CFrame = CFrame.new(pos, pos + hrp.CFrame.LookVector)
 	canTeleport = false
 	task.delay(cooldown, function() canTeleport = true end)
@@ -84,53 +96,52 @@ UserInputService.InputBegan:Connect(function(i, p)
 	end
 end)
 
--- Dynamic popup GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame")
-frame.Position = UDim2.new(1, -400, 1, -200)
+frame.Size = UDim2.new(0, 360, 0, 120) -- increased width and height
+frame.Position = UDim2.new(1, -380, 1, -160)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BackgroundTransparency = 0.2
+frame.BackgroundTransparency = 1
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
 local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 25)
+title.Position = UDim2.new(0, 10, 0, 8)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.SourceSansBold
 title.Text = "FE Teleport Script Attached!"
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextTransparency = 1
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = frame
 
 local msg = Instance.new("TextLabel")
+msg.Size = UDim2.new(1, -20, 1, -35)
+msg.Position = UDim2.new(0, 10, 0, 30)
 msg.BackgroundTransparency = 1
 msg.Font = Enum.Font.SourceSans
 msg.TextSize = 16
 msg.TextWrapped = true
 msg.TextColor3 = Color3.fromRGB(200, 200, 200)
+msg.TextTransparency = 1
 msg.TextXAlignment = Enum.TextXAlignment.Left
 msg.TextYAlignment = Enum.TextYAlignment.Top
 msg.Text = "Press 'T' to start flash teleporting\nPress 'Y' to start spinning\nTo stop the flash/spin, press 'F'."
 msg.Parent = frame
 
-local padding = 20
-local function resizeFrame()
-	title.Size = UDim2.new(0, 360, 0, title.TextBounds.Y)
-	title.Position = UDim2.new(0, padding/2, 0, padding/2)
-	msg.Size = UDim2.new(0, 360, 0, msg.TextBounds.Y)
-	msg.Position = UDim2.new(0, padding/2, 0, title.Size.Y + padding)
-	frame.Size = UDim2.new(0, 360 + padding, 0, title.Size.Y + msg.Size.Y + padding * 2)
-end
+TweenService:Create(frame, TweenInfo.new(0.5), {BackgroundTransparency = 0.2}):Play()
+TweenService:Create(title, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+TweenService:Create(msg, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
 
-resizeFrame()
-
-local fadeTime = 0.7
 task.delay(5, function()
-	TweenService:Create(frame, TweenInfo.new(fadeTime), {BackgroundTransparency = 1}):Play()
-	TweenService:Create(title, TweenInfo.new(fadeTime), {TextTransparency = 1}):Play()
-	TweenService:Create(msg, TweenInfo.new(fadeTime), {TextTransparency = 1}):Play()
-	task.wait(fadeTime + 0.2)
+	local fade = 0.7
+	TweenService:Create(frame, TweenInfo.new(fade), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(title, TweenInfo.new(fade), {TextTransparency = 1}):Play()
+	TweenService:Create(msg, TweenInfo.new(fade), {TextTransparency = 1}):Play()
+	task.wait(fade + 0.2)
 	gui:Destroy()
 end)
