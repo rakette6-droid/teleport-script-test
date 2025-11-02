@@ -11,6 +11,7 @@ local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
 
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "StartSceneGUI"
 gui.ResetOnSpawn = false
@@ -22,14 +23,14 @@ local function scaleElement(element, scaleX, scaleY, posX, posY)
 	element.AnchorPoint = Vector2.new(0.5, 0.5)
 end
 
-
+-- Background
 local bg = Instance.new("Frame")
 scaleElement(bg, 1.5, 1.5, 0.5, 0.5)
 bg.BackgroundColor3 = Color3.new(0, 0, 0)
 bg.BorderSizePixel = 0
 bg.Parent = gui
 
-
+-- Scanlines
 local scanlines = Instance.new("Frame")
 scaleElement(scanlines, 1, 1, 0.5, 0.5)
 scanlines.BackgroundTransparency = 0.9
@@ -37,7 +38,7 @@ scanlines.BackgroundColor3 = Color3.new(0, 0, 0)
 scanlines.BorderSizePixel = 0
 scanlines.Parent = gui
 
-
+-- Static
 local static = Instance.new("Frame")
 scaleElement(static, 1, 1, 0.5, 0.5)
 static.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -45,12 +46,12 @@ static.BackgroundTransparency = 0.95
 static.BorderSizePixel = 0
 static.Parent = gui
 
-
+-- Sparks folder
 local sparks = Instance.new("Folder")
 sparks.Name = "Sparks"
 sparks.Parent = gui
 
-
+-- Title
 local title = Instance.new("TextLabel")
 title.Text = "MADE BY 67_GODS" 
 title.Font = Enum.Font.Arcade
@@ -60,7 +61,7 @@ title.BackgroundTransparency = 1
 title.Parent = gui
 scaleElement(title, 0.8, 0.15, 0.5, 0.25)
 
-
+-- Loading Bar
 local loadBg = Instance.new("Frame")
 loadBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 loadBg.BorderSizePixel = 0
@@ -73,7 +74,7 @@ loadFill.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
 loadFill.BorderSizePixel = 0
 loadFill.Parent = loadBg
 
-
+-- Play Button
 local playBtn = Instance.new("TextButton")
 playBtn.Text = "PLAY"
 playBtn.Font = Enum.Font.Arcade
@@ -89,7 +90,7 @@ playBtn.Active = false
 playBtn.Parent = gui
 scaleElement(playBtn, 0.25, 0.08, 0.5, 0.65)
 
-
+-- Headshot Template
 local headshot = Instance.new("ImageLabel")
 headshot.Size = UDim2.new(0.15, 0, 0.15, 0)
 headshot.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -99,7 +100,7 @@ headshot.Parent = gui
 headshot.Position = UDim2.new(0.5, 0, 0.5, 0)
 headshot.Visible = false
 
-
+-- Camera glitch
 local glitching = true
 local originalCFrame = camera.CFrame
 
@@ -177,7 +178,7 @@ local function headshotSwarm()
 	end
 end
 
-
+-- Start cinematic effects
 spawn(glitchCamera)
 spawn(flickerTitle)
 spawn(flickerScanlines)
@@ -185,7 +186,7 @@ spawn(flickerStatic)
 spawn(sparkLoop)
 spawn(headshotSwarm)
 
-
+-- Smooth loading
 local loadPercent = 0
 spawn(function()
 	while loadPercent < 100 do
@@ -216,10 +217,12 @@ local function onPlay()
 	wait(1)
 	gui:Destroy()
 
-	
+	-- Activate the teleport GUI script AFTER cinematic
 	task.wait(0.5)
 
-
+	--==================================================
+	-- TELEPORT + NOTIFICATION SCRIPT
+	--==================================================
 
 	local teleportDistance = 5
 	local spinning = false
