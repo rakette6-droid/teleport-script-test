@@ -1,43 +1,34 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local hrp = humanoidRootPart
-
+local hrp = character:WaitForChild("HumanoidRootPart")
 
 local teleportDistance = 5
 local spinning = false
 
-local teleportDirections = {
-	{ name = "Front", angle = 0 },
-	{ name = "FrontRight", angle = 45 },
-	{ name = "Right", angle = 90 },
-	{ name = "BackRight", angle = 135 },
-	{ name = "Back", angle = 180 },
-	{ name = "BackLeft", angle = -135 },
-	{ name = "Left", angle = -90 },
-	{ name = "FrontLeft", angle = -45 }
+local directions = {
+	{angle = 0}, {angle = 45}, {angle = 90}, {angle = 135},
+	{angle = 180}, {angle = -135}, {angle = -90}, {angle = -45}
 }
 
 local function teleportAndLook(angle)
-	local cf = humanoidRootPart.CFrame
-	local newCF = cf * CFrame.Angles(0, math.rad(angle), 0)
-	local moveVector = newCF.LookVector * teleportDistance
-	humanoidRootPart.CFrame = CFrame.new(cf.Position + moveVector) * CFrame.Angles(0, math.rad(angle), 0)
+	local cf = hrp.CFrame
+	local move = (cf * CFrame.Angles(0, math.rad(angle), 0)).LookVector * teleportDistance
+	hrp.CFrame = CFrame.new(cf.Position + move) * CFrame.Angles(0, math.rad(angle), 0)
 end
 
 local function startSpin()
 	if spinning then return end
 	spinning = true
-	print("Spin started")
 	task.spawn(function()
 		while spinning do
-			for _, dir in ipairs(teleportDirections) do
+			for _, d in ipairs(directions) do
 				if not spinning then break end
-				teleportAndLook(dir.angle)
+				teleportAndLook(d.angle)
 				task.wait(0.1)
 			end
 		end
@@ -45,80 +36,112 @@ local function startSpin()
 end
 
 local function stopSpin()
-	if spinning then
-		spinning = false
-		print("Spin stopped")
-	end
+	spinning = false
 end
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.Y then
+UserInputService.InputBegan:Connect(function(i, p)
+	if p then return end
+	if i.KeyCode == Enum.KeyCode.Y then
 		startSpin()
-	elseif input.KeyCode == Enum.KeyCode.F then
+	elseif i.KeyCode == Enum.KeyCode.F then
 		stopSpin()
 	end
 end)
 
-
-local teleportDistance2 = 7
-local canTeleport = true
-local cooldown = 0.2
-
-local function teleport(direction)
+local teleportDistance2, canTeleport, cooldown = 7, true, 0.2
+local function teleport(key)
 	if not canTeleport then return end
-	local currentPosition = humanoidRootPart.Position
-	local teleportPosition
-
-	if direction == "W" then
-		teleportPosition = currentPosition + humanoidRootPart.CFrame.LookVector * teleportDistance2
-	elseif direction == "S" then
-		teleportPosition = currentPosition - humanoidRootPart.CFrame.LookVector * teleportDistance2
-	elseif direction == "A" then
-		teleportPosition = currentPosition - humanoidRootPart.CFrame.RightVector * teleportDistance2
-	elseif direction == "D" then
-		teleportPosition = currentPosition + humanoidRootPart.CFrame.RightVector * teleportDistance2
+	local pos = hrp.Position
+	if key == "W" then
+		pos += hrp.CFrame.LookVector * teleportDistance2
+	elseif key == "S" then
+		pos -= hrp.CFrame.LookVector * teleportDistance2
+	elseif key == "A" then
+		pos -= hrp.CFrame.RightVector * teleportDistance2
+	elseif key == "D" then
+		pos += hrp.CFrame.RightVector * teleportDistance2
 	end
-
-	humanoidRootPart.CFrame = CFrame.new(teleportPosition, teleportPosition + humanoidRootPart.CFrame.LookVector)
+	hrp.CFrame = CFrame.new(pos, pos + hrp.CFrame.LookVector)
 	canTeleport = false
 	task.delay(cooldown, function() canTeleport = true end)
 end
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.W then
-		teleport("W")
-	elseif input.KeyCode == Enum.KeyCode.S then
-		teleport("S")
-	elseif input.KeyCode == Enum.KeyCode.A then
-		teleport("A")
-	elseif input.KeyCode == Enum.KeyCode.D then
-		teleport("D")
-	end
+UserInputService.InputBegan:Connect(function(i, p)
+	if p then return end
+	local k = i.KeyCode
+	if k == Enum.KeyCode.W then teleport("W")
+	elseif k == Enum.KeyCode.S then teleport("S")
+	elseif k == Enum.KeyCode.A then teleport("A")
+	elseif k == Enum.KeyCode.D then teleport("D") end
 end)
 
-
-local teleportDistance3 = 7
-local running = false
-local forward = true
-
+local teleportDistance3, running, forward = 7, false, true
 local function flashTeleport()
 	while running do
 		local offset = forward and teleportDistance3 or -teleportDistance3
-		local targetPos = hrp.Position + hrp.CFrame.LookVector * offset
-		hrp.CFrame = CFrame.new(targetPos, targetPos + hrp.CFrame.LookVector)
+		local target = hrp.Position + hrp.CFrame.LookVector * offset
+		hrp.CFrame = CFrame.new(target, target + hrp.CFrame.LookVector)
 		forward = not forward
 		task.wait(0.02)
 	end
 end
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.T and not running then
+UserInputService.InputBegan:Connect(function(i, p)
+	if p then return end
+	if i.KeyCode == Enum.KeyCode.T and not running then
 		running = true
 		task.spawn(flashTeleport)
-	elseif input.KeyCode == Enum.KeyCode.F and running then
+	elseif i.KeyCode == Enum.KeyCode.F and running then
 		running = false
 	end
+end)
+
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 340, 0, 80)
+frame.Position = UDim2.new(1, -360, 1, -120)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundTransparency = 1
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 25)
+title.Position = UDim2.new(0, 10, 0, 8)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+title.Text = "FE Teleport Script Attached!"
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = frame
+
+local msg = Instance.new("TextLabel")
+msg.Size = UDim2.new(1, -20, 1, -35)
+msg.Position = UDim2.new(0, 10, 0, 30)
+msg.BackgroundTransparency = 1
+msg.Font = Enum.Font.SourceSans
+msg.TextSize = 16
+msg.TextWrapped = true
+msg.TextColor3 = Color3.fromRGB(200, 200, 200)
+msg.TextTransparency = 1
+msg.TextXAlignment = Enum.TextXAlignment.Left
+msg.TextYAlignment = Enum.TextYAlignment.Top
+msg.Text = "Press 'T' to start flash teleporting\nPress 'Y' to start spinning."
+msg.Parent = frame
+
+TweenService:Create(frame, TweenInfo.new(0.5), {BackgroundTransparency = 0.2}):Play()
+TweenService:Create(title, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+TweenService:Create(msg, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+
+task.delay(5, function()
+	local fade = 0.7
+	TweenService:Create(frame, TweenInfo.new(fade), {BackgroundTransparency = 1}):Play()
+	TweenService:Create(title, TweenInfo.new(fade), {TextTransparency = 1}):Play()
+	TweenService:Create(msg, TweenInfo.new(fade), {TextTransparency = 1}):Play()
+	task.wait(fade + 0.2)
+	gui:Destroy()
 end)
