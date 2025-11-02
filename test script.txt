@@ -1,0 +1,124 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local hrp = humanoidRootPart
+
+
+local teleportDistance = 5
+local spinning = false
+
+local teleportDirections = {
+	{ name = "Front", angle = 0 },
+	{ name = "FrontRight", angle = 45 },
+	{ name = "Right", angle = 90 },
+	{ name = "BackRight", angle = 135 },
+	{ name = "Back", angle = 180 },
+	{ name = "BackLeft", angle = -135 },
+	{ name = "Left", angle = -90 },
+	{ name = "FrontLeft", angle = -45 }
+}
+
+local function teleportAndLook(angle)
+	local cf = humanoidRootPart.CFrame
+	local newCF = cf * CFrame.Angles(0, math.rad(angle), 0)
+	local moveVector = newCF.LookVector * teleportDistance
+	humanoidRootPart.CFrame = CFrame.new(cf.Position + moveVector) * CFrame.Angles(0, math.rad(angle), 0)
+end
+
+local function startSpin()
+	if spinning then return end
+	spinning = true
+	print("Spin started")
+	task.spawn(function()
+		while spinning do
+			for _, dir in ipairs(teleportDirections) do
+				if not spinning then break end
+				teleportAndLook(dir.angle)
+				task.wait(0.1)
+			end
+		end
+	end)
+end
+
+local function stopSpin()
+	if spinning then
+		spinning = false
+		print("Spin stopped")
+	end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.Y then
+		startSpin()
+	elseif input.KeyCode == Enum.KeyCode.F then
+		stopSpin()
+	end
+end)
+
+
+local teleportDistance2 = 7
+local canTeleport = true
+local cooldown = 0.2
+
+local function teleport(direction)
+	if not canTeleport then return end
+	local currentPosition = humanoidRootPart.Position
+	local teleportPosition
+
+	if direction == "W" then
+		teleportPosition = currentPosition + humanoidRootPart.CFrame.LookVector * teleportDistance2
+	elseif direction == "S" then
+		teleportPosition = currentPosition - humanoidRootPart.CFrame.LookVector * teleportDistance2
+	elseif direction == "A" then
+		teleportPosition = currentPosition - humanoidRootPart.CFrame.RightVector * teleportDistance2
+	elseif direction == "D" then
+		teleportPosition = currentPosition + humanoidRootPart.CFrame.RightVector * teleportDistance2
+	end
+
+	humanoidRootPart.CFrame = CFrame.new(teleportPosition, teleportPosition + humanoidRootPart.CFrame.LookVector)
+	canTeleport = false
+	task.delay(cooldown, function() canTeleport = true end)
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.W then
+		teleport("W")
+	elseif input.KeyCode == Enum.KeyCode.S then
+		teleport("S")
+	elseif input.KeyCode == Enum.KeyCode.A then
+		teleport("A")
+	elseif input.KeyCode == Enum.KeyCode.D then
+		teleport("D")
+	end
+end)
+
+
+local teleportDistance3 = 7
+local running = false
+local forward = true
+
+local function flashTeleport()
+	while running do
+		local offset = forward and teleportDistance3 or -teleportDistance3
+		local targetPos = hrp.Position + hrp.CFrame.LookVector * offset
+		hrp.CFrame = CFrame.new(targetPos, targetPos + hrp.CFrame.LookVector)
+		forward = not forward
+		task.wait(0.02)
+	end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.T and not running then
+		running = true
+		task.spawn(flashTeleport)
+	elseif input.KeyCode == Enum.KeyCode.F and running then
+		running = false
+	end
+end)
